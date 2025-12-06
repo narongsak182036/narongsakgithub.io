@@ -1,1 +1,1683 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึก OPD แพทย์แผนจีน</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- html2pdf -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --accent-color: #00cec9;
+            --danger-color: #e17055;
+            --success-color: #00b894;
+            --light-bg: #f8f9ff;
+            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        body {
+            font-family: 'Sarabun', 'Noto Sans Thai', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 1.2rem 1.5rem;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.3);
+        }
+        
+        .btn-outline-primary {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            padding: 0.7rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.15);
+        }
+        
+        .chip {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            border-radius: 50px;
+            background-color: #f1f3ff;
+            border: 1px solid #e0e5ff;
+            color: #555;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .chip:hover {
+            background-color: #e9edff;
+        }
+        
+        .chip.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .service-chip {
+            display: inline-block;
+            padding: 0.7rem 1.2rem;
+            margin: 0.3rem;
+            border-radius: 12px;
+            background-color: white;
+            border: 2px solid #e0e5ff;
+            color: #555;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            min-width: 180px;
+        }
+        
+        .service-chip:hover {
+            border-color: var(--primary-color);
+            background-color: #f8f9ff;
+        }
+        
+        .service-chip.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+        }
+        
+        .service-price {
+            display: block;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 0.3rem;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f0f2ff;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-completed {
+            background-color: rgba(0, 184, 148, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-pending {
+            background-color: rgba(253, 203, 110, 0.1);
+            color: #f39c12;
+        }
+        
+        .status-cancelled {
+            background-color: rgba(231, 112, 85, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .patient-info-box {
+            background: linear-gradient(135deg, #f8f9ff, #f0f2ff);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-label {
+            font-size: 0.85rem;
+            color: #777;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .receipt-box {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 2px dashed #e0e5ff;
+            margin-top: 1rem;
+        }
+        
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .receipt-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            font-weight: 700;
+            font-size: 1.2rem;
+            border-top: 2px solid var(--primary-color);
+            margin-top: 0.5rem;
+        }
+        
+        /* สำหรับ PDF */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .card {
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .card {
+                margin-bottom: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .btn-group {
+                width: 100%;
+            }
+            
+            .service-chip {
+                min-width: 140px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-heart-pulse me-2"></i>
+                OPD แพทย์แผนจีน
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="bi bi-house-door me-1"></i> หน้าหลัก</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openSavedList()"><i class="bi bi-folder me-1"></i> ประวัติผู้ป่วย</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadAppointments()"><i class="bi bi-calendar-check me-1"></i> นัดหมาย</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
+    <!-- Main Content -->
+    <div class="container my-4">
+        <div class="row">
+            <!-- ข้อมูลผู้ป่วย -->
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-person-circle me-2"></i> ข้อมูลผู้ป่วย
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">ชื่อ - สกุล</label>
+                                <input id="pname" class="form-control" placeholder="กรุณากรอกชื่อ-สกุลผู้ป่วย">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">อายุ</label>
+                                <input id="age" type="number" class="form-control" min="0" max="120">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">เพศ</label>
+                                <select id="gender" class="form-select">
+                                    <option value="ชาย">ชาย</option>
+                                    <option value="หญิง">หญิง</option>
+                                    <option value="อื่น">อื่น</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">วันที่ตรวจ</label>
+                                <input id="visitDate" type="date" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">เวลา</label>
+                                <input id="visitTime" type="time" class="form-control" value="09:00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- อาการและประวัติ -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-clipboard-pulse me-2"></i> อาการและการวินิจฉัย
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">อาการสำคัญ</label>
+                            <textarea id="symptom" rows="3" class="form-control" placeholder="อาการที่ผู้ป่วยมาพบแพทย์"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">ประวัติที่เกี่ยวข้อง</label>
+                            <textarea id="history" rows="2" class="form-control" placeholder="ประวัติการเจ็บป่วย / ประวัติการรักษา"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ลักษณะลิ้น (เลือกได้หลายข้อ)</label>
+                                    <div id="tongueChips" class="d-flex flex-wrap">
+                                        <span class="chip" data-val="สีแดง">สีแดง</span>
+                                        <span class="chip" data-val="ซีด">ซีด</span>
+                                        <span class="chip" data-val="คราบขาว">คราบขาว</span>
+                                        <span class="chip" data-val="คราบเหลือง">คราบเหลือง</span>
+                                        <span class="chip" data-val="แห้ง">แห้ง</span>
+                                        <span class="chip" data-val="ชุ่ม">ชุ่ม</span>
+                                        <span class="chip" data-val="มีจุดแดง">มีจุดแดง</span>
+                                        <span class="chip" data-val="บวม">บวม</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ชีพจร</label>
+                                    <div id="pulseOptions">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pulse" value="ปกติ" id="p_normal" checked>
+                                            <label class="form-check-label" for="p_normal">ปกติ</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pulse" value="ลื่น" id="p_slippery">
+                                            <label class="form-check-label" for="p_slippery">ลื่น</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pulse" value="ตึง" id="p_tight">
+                                            <label class="form-check-label" for="p_tight">ตึง</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pulse" value="เบา/เสื่อม" id="p_weak">
+                                            <label class="form-check-label" for="p_weak">เบา/เสื่อม</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pulse" value="อื่นๆ" id="p_other">
+                                            <label class="form-check-label" for="p_other">อื่นๆ</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">วินิจฉัย (แพทย์แผนจีน)</label>
+                                <input id="tcmDiag" class="form-control" placeholder="เช่น 肝郁化火 (ตับซึมเศร้าแปลงเป็นไฟ)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">วินิจฉัยสากล (Western Dx)</label>
+                                <input id="westDiag" class="form-control" placeholder="เช่น Tension Headache">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- บริการและค่าใช้จ่าย -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-cash-coin me-2"></i> บริการและค่าใช้จ่าย
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h6 class="section-title">เลือกบริการที่ได้รับ</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="service-chip" data-service="ฝังเข็ม + กระตุ้นไฟฟ้า" data-price="700">
+                                        <div>ฝังเข็ม + กระตุ้นไฟฟ้า</div>
+                                        <span class="service-price">700 บาท</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="service-chip" data-service="ฝังเข็ม + ครอบแก้ว" data-price="850">
+                                        <div>ฝังเข็ม + ครอบแก้ว</div>
+                                        <span class="service-price">850 บาท</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="service-chip" data-service="ครอบแก้ว" data-price="500">
+                                        <div>ครอบแก้ว</div>
+                                        <span class="service-price">500 บาท</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="service-chip" data-service="ตรวจ + ยาจีน" data-price="750">
+                                        <div>ตรวจ + ยาจีน</div>
+                                        <span class="service-price">750 บาท</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="service-chip" data-service="นวดกดจุด" data-price="400">
+                                        <div>นวดกดจุด</div>
+                                        <span class="service-price">400 บาท</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="service-chip" data-service="ตรวจทั่วไป" data-price="300">
+                                        <div>ตรวจทั่วไป</div>
+                                        <span class="service-price">300 บาท</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">บริการอื่นๆ</label>
+                                    <input id="otherService" class="form-control" placeholder="กรอกบริการอื่นๆ" onchange="updateCustomService()">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">ราคาบริการอื่นๆ</label>
+                                    <div class="input-group">
+                                        <input id="otherPrice" type="number" class="form-control" min="0" value="0" oninput="updateCustomService()">
+                                        <span class="input-group-text">บาท</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="receipt-box">
+                            <h6 class="section-title">ใบเสร็จรับเงิน</h6>
+                            <div id="receiptItems">
+                                <!-- ข้อมูลใบเสร็จจะถูกเพิ่มโดย JavaScript -->
+                            </div>
+                            <div class="receipt-total">
+                                <span>รวมทั้งสิ้น</span>
+                                <span id="totalCost">0 บาท</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- แผนการรักษา -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-prescription me-2"></i> แผนการรักษา
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">แผนการรักษา / คำแนะนำ</label>
+                            <textarea id="plan" class="form-control" rows="3" placeholder="ให้คำแนะนำการรักษา การดูแลตนเอง หรือข้อควรปฏิบัติ"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">ยาสมุนไพรที่แนะนำ</label>
+                            <textarea id="herbRecommendation" class="form-control" rows="2" placeholder="เช่น แนะนำให้รับประทานสมุนไพร..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">จำนวนวันรักษา</label>
+                                <div class="input-group">
+                                    <input id="treatmentDays" type="number" class="form-control" min="1" value="7">
+                                    <span class="input-group-text">วัน</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">หมายเหตุเพิ่มเติม</label>
+                                <input id="additionalNote" class="form-control" placeholder="หมายเหตุเพิ่มเติม">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar - การดำเนินการและนัดหมาย -->
+            <div class="col-lg-4">
+                <!-- ปุ่มดำเนินการ -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-gear me-2"></i> การดำเนินการ
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="saveOPD()">
+                                <i class="bi bi-save me-2"></i> บันทึกข้อมูล OPD
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="exportOPDToPDF()">
+                                <i class="bi bi-file-earmark-pdf me-2"></i> ส่งออกเป็น PDF
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReceiptPDF()">
+                                <i class="bi bi-receipt me-2"></i> ออกใบเสร็จ
+                            </button>
+                            <button class="btn btn-outline-info" onclick="exportMedicalCertPDF()">
+                                <i class="bi bi-file-text me-2"></i> ออกใบรับรองแพทย์
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="clearForm()">
+                                <i class="bi bi-eraser me-2"></i> ล้างฟอร์ม
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- นัดหมาย -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-calendar-plus me-2"></i> นัดหมายครั้งต่อไป
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">วัน/เวลานัดหมาย</label>
+                            <input id="appointDate" type="datetime-local" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ประเภทการนัด</label>
+                            <select id="appointType" class="form-select">
+                                <option value="ตรวจติดตาม">ตรวจติดตาม</option>
+                                <option value="ฝังเข็ม">ฝังเข็ม</option>
+                                <option value="นวดกดจุด">นวดกดจุด</option>
+                                <option value="ครอบแก้ว">ครอบแก้ว</option>
+                                <option value="รับยา">รับยา</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">หมายเหตุ</label>
+                            <input id="appointNote" class="form-control" placeholder="หมายเหตุเพิ่มเติม">
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="saveAppointment()">
+                                <i class="bi bi-calendar-check me-2"></i> บันทึกการนัดหมาย
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="loadAppointments()">
+                                <i class="bi bi-list-ul me-2"></i> ดูการนัดหมายทั้งหมด
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ค้นหาประวัติ -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-search me-2"></i> ค้นหาประวัติ
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <input id="searchBox" class="form-control" placeholder="ค้นหาตามชื่อ, อาการ, วินิจฉัย..." oninput="searchRecords()">
+                        </div>
+                        <div id="searchResults" style="max-height: 300px; overflow-y: auto;"></div>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary w-100" onclick="openSavedList()">
+                                <i class="bi bi-folder me-2"></i> ดูประวัติทั้งหมด
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับแสดงประวัติ -->
+    <div class="modal fade" id="historyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">ประวัติผู้ป่วย</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="savedList" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับแสดงการนัดหมาย -->
+    <div class="modal fade" id="appointmentsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">การนัดหมายทั้งหมด</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="appointmentList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // เก็บข้อมูลใน localStorage
+        const STORAGE_KEY = 'opd_tcm_records';
+        const APPOINTMENT_KEY = 'opd_appointments';
+
+        // ตัวแปรเก็บข้อมูลบริการและราคา
+        let selectedServices = [];
+        let totalCost = 0;
+
+        // เริ่มต้นเมื่อโหลดหน้า
+        document.addEventListener('DOMContentLoaded', function() {
+            // ตั้งค่าวันที่ปัจจุบัน
+            const today = new Date();
+            document.getElementById('visitDate').value = today.toISOString().split('T')[0];
+            
+            // ตั้งค่าวันที่นัดหมาย (7 วันข้างหน้า)
+            const nextWeek = new Date(today);
+            nextWeek.setDate(today.getDate() + 7);
+            const nextWeekStr = nextWeek.toISOString().slice(0, 16);
+            document.getElementById('appointDate').value = nextWeekStr;
+            
+            // ตั้งค่า chip handlers
+            attachChipHandlers();
+            
+            // ตั้งค่า service chip handlers
+            attachServiceChipHandlers();
+            
+            // โหลดข้อมูลเก่า (ถ้ามี)
+            renderSavedList();
+            loadAppointments();
+            
+            // อัพเดทใบเสร็จ
+            updateReceipt();
+        });
+
+        // จัดการ chip selection
+        function attachChipHandlers() {
+            document.querySelectorAll('#tongueChips .chip').forEach(chip => {
+                chip.addEventListener('click', () => chip.classList.toggle('active'));
+            });
+        }
+
+        // จัดการ service chip selection
+        function attachServiceChipHandlers() {
+            document.querySelectorAll('.service-chip').forEach(chip => {
+                chip.addEventListener('click', function() {
+                    const service = this.dataset.service;
+                    const price = parseInt(this.dataset.price);
+                    
+                    // ถ้าบริการนี้ถูกเลือกอยู่แล้ว ให้เอาออก
+                    if (this.classList.contains('active')) {
+                        this.classList.remove('active');
+                        selectedServices = selectedServices.filter(s => s.service !== service);
+                    } else {
+                        // ถ้ายังไม่ถูกเลือก ให้เพิ่มเข้าไป
+                        this.classList.add('active');
+                        selectedServices.push({
+                            service: service,
+                            price: price
+                        });
+                    }
+                    
+                    // อัพเดทใบเสร็จ
+                    updateReceipt();
+                });
+            });
+        }
+
+        // อัพเดทบริการที่กรอกเอง
+        function updateCustomService() {
+            const service = document.getElementById('otherService').value.trim();
+            const price = parseInt(document.getElementById('otherPrice').value) || 0;
+            
+            if (service && price > 0) {
+                // ลบบริการอื่นๆ ที่อาจมีอยู่แล้ว (มีได้เพียงหนึ่งบริการ)
+                selectedServices = selectedServices.filter(s => s.service !== 'บริการอื่นๆ');
+                
+                // เพิ่มบริการใหม่
+                selectedServices.push({
+                    service: service,
+                    price: price
+                });
+                
+                // อัพเดทใบเสร็จ
+                updateReceipt();
+            }
+        }
+
+        // อัพเดทใบเสร็จ
+        function updateReceipt() {
+            const container = document.getElementById('receiptItems');
+            let html = '';
+            
+            totalCost = 0;
+            
+            selectedServices.forEach(item => {
+                totalCost += item.price;
+                html += `
+                    <div class="receipt-item">
+                        <span>${item.service}</span>
+                        <span>${item.price.toLocaleString()} บาท</span>
+                    </div>
+                `;
+            });
+            
+            if (selectedServices.length === 0) {
+                html = '<div class="text-center text-muted py-3">ยังไม่ได้เลือกบริการ</div>';
+            }
+            
+            container.innerHTML = html;
+            document.getElementById('totalCost').textContent = totalCost.toLocaleString() + ' บาท';
+        }
+
+        // ฟังก์ชันดึงค่าลิ้นที่เลือก
+        function getSelectedTongue() {
+            return Array.from(document.querySelectorAll('#tongueChips .chip.active'))
+                        .map(c => c.dataset.val);
+        }
+
+        // ฟังก์ชันดึงค่าชีพจรที่เลือก
+        function getSelectedPulse() {
+            const selected = document.querySelector('input[name="pulse"]:checked');
+            return selected ? selected.value : 'ปกติ';
+        }
+
+        // บันทึกข้อมูล OPD
+        function saveOPD() {
+            const record = {
+                id: Date.now(),
+                name: document.getElementById('pname').value.trim(),
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value,
+                visitDate: document.getElementById('visitDate').value,
+                visitTime: document.getElementById('visitTime').value,
+                symptom: document.getElementById('symptom').value,
+                history: document.getElementById('history').value,
+                tongue: getSelectedTongue(),
+                pulse: getSelectedPulse(),
+                tcmDiag: document.getElementById('tcmDiag').value,
+                westDiag: document.getElementById('westDiag').value,
+                plan: document.getElementById('plan').value,
+                herbRecommendation: document.getElementById('herbRecommendation').value,
+                treatmentDays: document.getElementById('treatmentDays').value,
+                services: [...selectedServices], // สำเนาของ selectedServices
+                totalCost: totalCost,
+                additionalNote: document.getElementById('additionalNote').value,
+                savedAt: new Date().toLocaleString('th-TH')
+            };
+
+            if (!record.name) {
+                alert('กรุณากรอกชื่อผู้ป่วย');
+                return;
+            }
+
+            if (selectedServices.length === 0) {
+                alert('กรุณาเลือกบริการอย่างน้อย 1 รายการ');
+                return;
+            }
+
+            // ดึงข้อมูลเก่าจาก localStorage
+            let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            records.unshift(record); // เพิ่มข้อมูลใหม่ไปด้านหน้า
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+
+            alert('บันทึกข้อมูลสำเร็จ!');
+            renderSavedList();
+            
+            // เคลียร์ฟอร์มบางส่วน (ยกเว้นข้อมูลผู้ป่วย)
+            document.getElementById('symptom').value = '';
+            document.getElementById('history').value = '';
+            document.getElementById('tcmDiag').value = '';
+            document.getElementById('westDiag').value = '';
+            document.getElementById('plan').value = '';
+            document.getElementById('herbRecommendation').value = '';
+            document.getElementById('additionalNote').value = '';
+            
+            // รีเซ็ต chip selection
+            document.querySelectorAll('#tongueChips .chip.active').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            
+            // รีเซ็ต service selection
+            document.querySelectorAll('.service-chip.active').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            
+            // รีเซ็ตบริการอื่นๆ
+            document.getElementById('otherService').value = '';
+            document.getElementById('otherPrice').value = 0;
+            
+            // รีเซ็ตตัวแปร
+            selectedServices = [];
+            
+            // อัพเดทใบเสร็จ
+            updateReceipt();
+        }
+
+        // แสดงรายการบันทึก
+        function renderSavedList() {
+            const container = document.getElementById('savedList');
+            if (!container) return;
+            
+            let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            
+            if (records.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted p-3">ยังไม่มีประวัติผู้ป่วย</div>';
+                return;
+            }
+
+            let html = '<div class="list-group">';
+            records.slice(0, 10).forEach(record => {
+                const serviceNames = record.services ? record.services.map(s => s.service).join(', ') : 'ไม่มีข้อมูล';
+                html += `
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${record.name}</h6>
+                            <small class="text-muted">${record.savedAt}</small>
+                        </div>
+                        <p class="mb-1">
+                            <small>อายุ ${record.age} ปี, ${record.gender}</small><br>
+                            <small>บริการ: ${serviceNames}</small><br>
+                            <small>รวม: ${record.totalCost ? record.totalCost.toLocaleString() : 0} บาท</small>
+                        </p>
+                        <div class="d-flex justify-content-end gap-1 mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadRecord(${record.id})">
+                                <i class="bi bi-eye"></i> ดู
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="exportRecordPDF(${record.id})">
+                                <i class="bi bi-file-pdf"></i> PDF
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="exportReceiptFromRecord(${record.id})">
+                                <i class="bi bi-receipt"></i> เสร็จ
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord(${record.id})">
+                                <i class="bi bi-trash"></i> ลบ
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        // โหลดข้อมูลเก่ามาแสดงในฟอร์ม
+        function loadRecord(id) {
+            let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const record = records.find(r => r.id === id);
+            
+            if (!record) {
+                alert('ไม่พบข้อมูล');
+                return;
+            }
+
+            // เติมข้อมูลลงในฟอร์ม
+            document.getElementById('pname').value = record.name;
+            document.getElementById('age').value = record.age;
+            document.getElementById('gender').value = record.gender;
+            document.getElementById('visitDate').value = record.visitDate;
+            document.getElementById('visitTime').value = record.visitTime || '09:00';
+            document.getElementById('symptom').value = record.symptom;
+            document.getElementById('history').value = record.history;
+            document.getElementById('tcmDiag').value = record.tcmDiag;
+            document.getElementById('westDiag').value = record.westDiag;
+            document.getElementById('plan').value = record.plan;
+            document.getElementById('herbRecommendation').value = record.herbRecommendation || '';
+            document.getElementById('treatmentDays').value = record.treatmentDays || 7;
+            document.getElementById('additionalNote').value = record.additionalNote || '';
+
+            // รีเซ็ต chip selection
+            document.querySelectorAll('#tongueChips .chip.active').forEach(chip => {
+                chip.classList.remove('active');
+            });
+
+            // เลือก chip ตามข้อมูลที่บันทึก
+            if (record.tongue && Array.isArray(record.tongue)) {
+                record.tongue.forEach(tongueVal => {
+                    const chip = document.querySelector(`#tongueChips .chip[data-val="${tongueVal}"]`);
+                    if (chip) chip.classList.add('active');
+                });
+            }
+
+            // เลือกชีพจร
+            if (record.pulse) {
+                const pulseRadio = document.querySelector(`input[name="pulse"][value="${record.pulse}"]`);
+                if (pulseRadio) pulseRadio.checked = true;
+            }
+
+            // รีเซ็ต service selection
+            document.querySelectorAll('.service-chip.active').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            
+            // รีเซ็ตบริการอื่นๆ
+            document.getElementById('otherService').value = '';
+            document.getElementById('otherPrice').value = 0;
+
+            // โหลดบริการที่บันทึกไว้
+            selectedServices = [];
+            if (record.services && Array.isArray(record.services)) {
+                record.services.forEach(serviceItem => {
+                    // หา service chip ที่ตรงกัน
+                    const chip = document.querySelector(`.service-chip[data-service="${serviceItem.service}"]`);
+                    if (chip) {
+                        chip.classList.add('active');
+                        selectedServices.push(serviceItem);
+                    } else {
+                        // ถ้าไม่เจอ chip ที่ตรงกัน แสดงว่าเป็นบริการอื่นๆ
+                        document.getElementById('otherService').value = serviceItem.service;
+                        document.getElementById('otherPrice').value = serviceItem.price;
+                        selectedServices.push(serviceItem);
+                    }
+                });
+            }
+            
+            // อัพเดทใบเสร็จ
+            updateReceipt();
+
+            alert('โหลดข้อมูลสำเร็จ!');
+        }
+
+        // ลบข้อมูล
+        function deleteRecord(id) {
+            if (!confirm('คุณต้องการลบข้อมูลนี้ใช่หรือไม่?')) return;
+            
+            let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            records = records.filter(r => r.id !== id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            
+            renderSavedList();
+            alert('ลบข้อมูลสำเร็จ');
+        }
+
+        // ส่งออกเป็น PDF (บันทึกการตรวจ)
+        function exportOPDToPDF() {
+            // ดึงค่าจากฟอร์มโดยตรง
+            const tongue = getSelectedTongue().join(', ');
+            const pulse = getSelectedPulse();
+            const servicesList = selectedServices.map(s => `${s.service} (${s.price} บาท)`).join(', ');
+            
+            const element = document.createElement('div');
+            element.innerHTML = `
+                <div style="font-family: 'Sarabun', sans-serif; padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px;">
+                        <h2 style="color: #6c5ce7; margin-bottom: 5px;">บันทึกการตรวจ OPD แพทย์แผนจีน</h2>
+                        <p style="color: #777;">${document.getElementById('visitDate').value}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 8px;">ข้อมูลผู้ป่วย</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="width: 30%; padding: 8px 0;"><strong>ชื่อ-สกุล:</strong></td>
+                                <td style="padding: 8px 0;">${document.getElementById('pname').value || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>อายุ/เพศ:</strong></td>
+                                <td style="padding: 8px 0;">${document.getElementById('age').value || '-'} ปี / ${document.getElementById('gender').value || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>วันที่ตรวจ:</strong></td>
+                                <td style="padding: 8px 0;">${document.getElementById('visitDate').value || '-'} ${document.getElementById('visitTime').value || ''}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 8px;">อาการและการวินิจฉัย</h4>
+                        <p><strong>อาการสำคัญ:</strong> ${document.getElementById('symptom').value || '-'}</p>
+                        <p><strong>ประวัติที่เกี่ยวข้อง:</strong> ${document.getElementById('history').value || '-'}</p>
+                        <p><strong>ลักษณะลิ้น:</strong> ${tongue || '-'}</p>
+                        <p><strong>ชีพจร:</strong> ${pulse || '-'}</p>
+                        <p><strong>วินิจฉัย TCM:</strong> ${document.getElementById('tcmDiag').value || '-'}</p>
+                        <p><strong>วินิจฉัยสากล:</strong> ${document.getElementById('westDiag').value || '-'}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 8px;">บริการและค่าใช้จ่าย</h4>
+                        <p><strong>บริการที่ได้รับ:</strong> ${servicesList || '-'}</p>
+                        <p><strong>รวมค่าใช้จ่าย:</strong> ${totalCost.toLocaleString()} บาท</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 8px;">แผนการรักษา</h4>
+                        <p>${document.getElementById('plan').value || '-'}</p>
+                        <p><strong>ยาสมุนไพรที่แนะนำ:</strong> ${document.getElementById('herbRecommendation').value || '-'}</p>
+                        <p><strong>จำนวนวันรักษา:</strong> ${document.getElementById('treatmentDays').value || 0} วัน</p>
+                        <p><strong>หมายเหตุ:</strong> ${document.getElementById('additionalNote').value || '-'}</p>
+                    </div>
+                    
+                    <div style="margin-top: 50px; border-top: 1px solid #333; padding-top: 15px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%; text-align: center;">
+                                    <p>_________________________________</p>
+                                    <p>ลายเซ็นแพทย์</p>
+                                </td>
+                                <td style="width: 50%; text-align: center;">
+                                    <p>_________________________________</p>
+                                    <p>ลายเซ็นผู้ป่วย/ผู้ปกครอง</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            const opt = {
+                margin: 10,
+                filename: `OPD_TCM_${document.getElementById('pname').value || 'ผู้ป่วย'}_${new Date().toISOString().slice(0,10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // ส่งออกใบเสร็จ
+        function exportReceiptPDF() {
+            if (selectedServices.length === 0) {
+                alert('กรุณาเลือกบริการก่อนออกใบเสร็จ');
+                return;
+            }
+            
+            const element = document.createElement('div');
+            element.innerHTML = generateReceiptContent();
+            
+            const opt = {
+                margin: 10,
+                filename: `ใบเสร็จ_${document.getElementById('pname').value || 'ผู้ป่วย'}_${new Date().toISOString().slice(0,10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // ส่งออกใบเสร็จจากข้อมูลที่บันทึกไว้
+        function exportReceiptFromRecord(id) {
+            let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const record = records.find(r => r.id === id);
+            
+            if (!record) {
+                alert('ไม่พบข้อมูล');
+                return;
+            }
+            
+            const element = document.createElement('div');
+            element.innerHTML = generateReceiptContentFromRecord(record);
+            
+            const opt = {
+                margin: 10,
+                filename: `ใบเสร็จ_${record.name}_${record.visitDate || 'ไม่มีวันที่'}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // สร้างเนื้อหาใบเสร็จ
+        function generateReceiptContent() {
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let servicesHTML = '';
+            selectedServices.forEach(item => {
+                servicesHTML += `
+                    <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${item.service}</td>
+                        <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #eee;">${item.price.toLocaleString()} บาท</td>
+                    </tr>
+                `;
+            });
+            
+            return `
+                <div style="font-family: 'Sarabun', sans-serif; padding: 25px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="color: #6c5ce7; margin-bottom: 5px;">ใบเสร็จรับเงิน</h2>
+                        <h4 style="color: #333; margin-bottom: 15px;">คลินิกแพทย์แผนจีน</h4>
+                        <p style="color: #777;">ที่อยู่: 123 ถนนสุขภาพ แขวงแผนจีน เขตแพทย์แผนไทย กรุงเทพฯ 10100</p>
+                        <p style="color: #777;">โทรศัพท์: 02-123-4567</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <table style="width: 100%; margin-bottom: 20px;">
+                            <tr>
+                                <td style="width: 40%; padding: 8px 0;"><strong>ชื่อผู้ป่วย:</strong></td>
+                                <td style="padding: 8px 0;">${document.getElementById('pname').value || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>วันที่:</strong></td>
+                                <td style="padding: 8px 0;">${formattedDate}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>เลขที่ใบเสร็จ:</strong></td>
+                                <td style="padding: 8px 0;">RCP${Date.now().toString().slice(-6)}</td>
+                            </tr>
+                        </table>
+                        
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #6c5ce7; padding-bottom: 8px; margin-top: 25px;">รายการบริการ</h4>
+                        <table style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 10px 0; border-bottom: 2px solid #333; text-align: left;">รายการ</th>
+                                    <th style="padding: 10px 0; border-bottom: 2px solid #333; text-align: right;">ราคา</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${servicesHTML}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td style="padding: 15px 0; text-align: right; font-weight: 700; border-top: 2px solid #333;">รวมทั้งสิ้น:</td>
+                                    <td style="padding: 15px 0; text-align: right; font-weight: 700; border-top: 2px solid #333;">${totalCost.toLocaleString()} บาท</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding: 15px; background-color: #f8f9ff; border-radius: 8px;">
+                        <p><strong>หมายเหตุ:</strong> ${document.getElementById('additionalNote').value || 'ขอบคุณที่ใช้บริการ'}</p>
+                    </div>
+                    
+                    <div style="margin-top: 50px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%; text-align: center;">
+                                    <p>_________________________________</p>
+                                    <p>ผู้รับเงิน</p>
+                                </td>
+                                <td style="width: 50%; text-align: center;">
+                                    <p>_________________________________</p>
+                                    <p>ผู้จ่ายเงิน</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 40px; font-size: 12px; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 15px;">
+                        <p>ใบเสร็จรับเงินนี้เป็นหลักฐานการชำระเงินที่ถูกต้องตามกฎหมาย</p>
+                        <p>กรุณาเก็บใบเสร็จนี้ไว้เพื่อแสดงเป็นหลักฐานในภายหลัง</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // สร้างเนื้อหาใบเสร็จจากข้อมูลที่บันทึก
+        function generateReceiptContentFromRecord(record) {
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let servicesHTML = '';
+            record.services.forEach(item => {
+                servicesHTML += `
+                    <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${item.service}</td>
+                        <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #eee;">${item.price.toLocaleString()} บาท</td>
+                    </tr>
+                `;
+            });
+            
+            return `
+                <div style="font-family: 'Sarabun', sans-serif; padding: 25px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="color: #6c5ce7; margin-bottom: 5px;">ใบเสร็จรับเงิน</h2>
+                        <h4 style="color: #333; margin-bottom: 15px;">คลินิกแพทย์แผนจีน</h4>
+                        <p style="color: #777;">ที่อยู่: 123 ถนนสุขภาพ แขวงแผนจีน เขตแพทย์แผนไทย กรุงเทพฯ 10100</p>
+                        <p style="color: #777;">โทรศัพท์: 02-123-4567</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <table style="width: 100%; margin-bottom: 20px;">
+                            <tr>
+                                <td style="width: 40%; padding: 8px 0;"><strong>ชื่อผู้ป่วย:</strong></td>
+                                <td style="padding: 8px 0;">${record.name || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>วันที่ตรวจ:</strong></td>
+                                <td style="padding: 8px 0;">${record.visitDate || '-'} ${record.visitTime || ''}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>วันที่ออกใบเสร็จ:</strong></td>
+                                <td style="padding: 8px 0;">${formattedDate}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>เลขที่ใบเสร็จ:</strong></td>
+                                <td style="padding: 8px 0;">RCP${record.id.toString().slice(-6)}</td>
+                            </tr>
+                        </table>
+                        
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #6c5ce7; padding-bottom: 8px; margin-top: 25px;">รายการบริการ</h4>
+                        <table style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 10px 0; border-bottom: 2px solid #333; text-align: left;">รายการ</th>
+                                    <th style="padding: 10px 0; border-bottom: 2px solid #333; text-align: right;">ราคา</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${servicesHTML}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td style="padding: 15px 0; text-align: right; font-weight: 700; border-top: 2px solid #333;">รวมทั้งสิ้น:</td>
+                                    <td style="padding: 15px 0; text-align: right; font-weight: 700; border-top: 2px solid #333;">${record.totalCost.toLocaleString()} บาท</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding: 15px; background-color: #f8f9ff; border-radius: 8px;">
+                        <p><strong>หมายเหตุ:</strong> ${record.additionalNote || 'ขอบคุณที่ใช้บริการ'}</p>
+                    </div>
+                    
+                    <div style="margin-top: 50px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%; text-align: center;">
+                                    <p>_________________________________</p>
+                                    <p>ผู้รับเงิน</p>
+                                </td>
+                                <td style="width: 50%; text-align: center;">
+                                    <p>_________________________________</p>
+                                    <p>ผู้จ่ายเงิน</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 40px; font-size: 12px; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 15px;">
+                        <p>ใบเสร็จรับเงินนี้เป็นหลักฐานการชำระเงินที่ถูกต้องตามกฎหมาย</p>
+                        <p>กรุณาเก็บใบเสร็จนี้ไว้เพื่อแสดงเป็นหลักฐานในภายหลัง</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ส่งออกใบรับรองแพทย์
+        function exportMedicalCertPDF() {
+            const element = document.createElement('div');
+            element.innerHTML = generateMedicalCertContent();
+            
+            const opt = {
+                margin: 10,
+                filename: `ใบรับรองแพทย์_${document.getElementById('pname').value || 'ผู้ป่วย'}_${new Date().toISOString().slice(0,10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // สร้างเนื้อหาภาครับรองแพทย์
+        function generateMedicalCertContent() {
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            return `
+                <div style="font-family: 'Sarabun', sans-serif; padding: 30px;">
+                    <div style="text-align: center; margin-bottom: 40px;">
+                        <h1 style="color: #6c5ce7; margin-bottom: 5px;">ใบรับรองแพทย์</h1>
+                        <h3 style="color: #333; margin-bottom: 20px;">Medical Certificate</h3>
+                        <p style="color: #777;">คลินิกแพทย์แผนจีน</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <p style="text-indent: 50px;">
+                            ข้าพเจ้าได้ตรวจผู้ป่วย <strong>${document.getElementById('pname').value || '_________________'}</strong> 
+                            อายุ <strong>${document.getElementById('age').value || '___'}</strong> ปี 
+                            เพศ <strong>${document.getElementById('gender').value || '___'}</strong> 
+                            เมื่อวันที่ <strong>${document.getElementById('visitDate').value || '_________________'}</strong>
+                        </p>
+                        
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            ผลการตรวจพบว่า: ${document.getElementById('symptom').value || '____________________________________________________________'}
+                        </p>
+                        
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            วินิจฉัย: ${document.getElementById('tcmDiag').value || '____________________________________________________________'}
+                        </p>
+                        
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            ให้การรักษาโดย: ${document.getElementById('plan').value || '____________________________________________________________'}
+                        </p>
+                        
+                        <p style="text-indent: 50px; margin-top: 20px;">
+                            ควรพักรักษาตัวเป็นเวลา: <strong>${document.getElementById('treatmentDays').value || '___'}</strong> วัน
+                            ตั้งแต่วันที่ <strong>${formattedDate}</strong>
+                        </p>
+                    </div>
+                    
+                    <div style="margin-top: 80px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 60%;"></td>
+                                <td style="text-align: center;">
+                                    <p>ลงชื่อ ___________________________</p>
+                                    <p>(แพทย์ผู้ออกใบรับรอง)</p>
+                                    <p>ใบรับรองแพทย์ฉบับนี้มีอายุ 30 วัน นับจากวันที่ออกให้</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 50px; font-size: 12px; color: #777; border-top: 1px solid #eee; padding-top: 10px;">
+                        <p>หมายเหตุ: ใบรับรองแพทย์นี้ใช้สำหรับแสดงต่อนายจ้างหรือหน่วยงานราชการเท่านั้น</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ส่งออกข้อมูลที่บันทึกไว้เป็น PDF
+        function exportRecordPDF(id) {
+            let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const record = records.find(r => r.id === id);
+            
+            if (!record) {
+                alert('ไม่พบข้อมูล');
+                return;
+            }
+
+            const element = document.createElement('div');
+            element.innerHTML = generatePDFContentFromRecord(record);
+            
+            const opt = {
+                margin: 10,
+                filename: `OPD_TCM_${record.name}_${record.visitDate || 'ไม่มีวันที่'}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // สร้างเนื้อหา PDF จากข้อมูลที่บันทึก
+        function generatePDFContentFromRecord(record) {
+            const tongue = Array.isArray(record.tongue) ? record.tongue.join(', ') : record.tongue;
+            const servicesList = record.services ? record.services.map(s => `${s.service} (${s.price} บาท)`).join(', ') : 'ไม่มีข้อมูล';
+            
+            return `
+                <div style="font-family: 'Sarabun', sans-serif; padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px;">
+                        <h2 style="color: #6c5ce7; margin-bottom: 5px;">บันทึกการตรวจ OPD แพทย์แผนจีน</h2>
+                        <p style="color: #777;">บันทึกเมื่อ: ${record.savedAt}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 8px;">ข้อมูลผู้ป่วย</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="width: 30%; padding: 8px 0;"><strong>ชื่อ-สกุล:</strong></td>
+                                <td style="padding: 8px 0;">${record.name || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>อายุ/เพศ:</strong></td>
+                                <td style="padding: 8px 0;">${record.age || '-'} ปี / ${record.gender || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>วันที่ตรวจ:</strong></td>
+                                <td style="padding: 8px 0;">${record.visitDate || '-'} ${record.visitTime || ''}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 8px;">อาการและการวินิจฉัย</h4>
+                        <p><strong>อาการสำคัญ:</strong> ${record.symptom || '-'}</p>
+                        <p><strong>ประวัติที่เกี่ยวข้อง:</strong> ${record.history || '-'}</p>
+                        <p><strong>ลักษณะลิ้น:</strong> ${tongue || '-'}</p>
+                        <p><strong>ชีพจร:</strong> ${record.pulse || '-'}</p>
+                        <p><strong>วินิจฉัย TCM:</strong> ${record.tcmDiag || '-'}</p>
+                        <p><strong>วินิจฉัยสากล:</strong> ${record.westDiag || '-'}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 8px;">บริการและค่าใช้จ่าย</h4>
+                        <p><strong>บริการที่ได้รับ:</strong> ${servicesList || '-'}</p>
+                        <p><strong>รวมค่าใช้จ่าย:</strong> ${record.totalCost ? record.totalCost.toLocaleString() : 0} บาท</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 8px;">แผนการรักษา</h4>
+                        <p>${record.plan || '-'}</p>
+                        <p><strong>ยาสมุนไพรที่แนะนำ:</strong> ${record.herbRecommendation || '-'}</p>
+                        <p><strong>จำนวนวันรักษา:</strong> ${record.treatmentDays || 0} วัน</p>
+                        <p><strong>หมายเหตุ:</strong> ${record.additionalNote || '-'}</p>
+                    </div>
+                    
+                    <div style="margin-top: 50px; border-top: 1px solid #333; padding-top: 15px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%; text-align: center;">
+                                    <p>_________________________________</p>
+                                    <p>ลายเซ็นแพทย์</p>
+                                </td>
+                                <td style="width: 50%; text-align: center;">
+                                    <p>_________________________________</p>
+                                    <p>ลายเซ็นผู้ป่วย/ผู้ปกครอง</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // บันทึกการนัดหมาย
+        function saveAppointment() {
+            const appointDate = document.getElementById('appointDate').value;
+            const appointType = document.getElementById('appointType').value;
+            const appointNote = document.getElementById('appointNote').value;
+            const patientName = document.getElementById('pname').value;
+
+            if (!appointDate) {
+                alert('กรุณาเลือกวันเวลานัดหมาย');
+                return;
+            }
+
+            if (!patientName) {
+                alert('กรุณากรอกชื่อผู้ป่วยก่อนบันทึกการนัดหมาย');
+                return;
+            }
+
+            const appointment = {
+                id: Date.now(),
+                patientName: patientName,
+                date: appointDate,
+                type: appointType,
+                note: appointNote,
+                createdAt: new Date().toLocaleString('th-TH')
+            };
+
+            let appointments = JSON.parse(localStorage.getItem(APPOINTMENT_KEY)) || [];
+            appointments.unshift(appointment);
+            localStorage.setItem(APPOINTMENT_KEY, JSON.stringify(appointments));
+
+            alert('บันทึกการนัดหมายสำเร็จ!');
+            document.getElementById('appointNote').value = '';
+            
+            // ตั้งค่าวันที่นัดหมายถัดไป (7 วันข้างหน้า)
+            const nextDate = new Date(appointDate);
+            nextDate.setDate(nextDate.getDate() + 7);
+            document.getElementById('appointDate').value = nextDate.toISOString().slice(0, 16);
+        }
+
+        // แสดงการนัดหมายทั้งหมด
+        function loadAppointments() {
+            const container = document.getElementById('appointmentList');
+            let appointments = JSON.parse(localStorage.getItem(APPOINTMENT_KEY)) || [];
+            
+            if (appointments.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted p-3">ยังไม่มีการนัดหมาย</div>';
+                return;
+            }
+
+            // เรียงลำดับตามวันที่นัดหมาย (เร็วสุดก่อน)
+            appointments.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            let html = '<div class="list-group">';
+            appointments.forEach(appt => {
+                const apptDate = new Date(appt.date);
+                const now = new Date();
+                const isPast = apptDate < now;
+                const statusClass = isPast ? 'status-completed' : 'status-pending';
+                const statusText = isPast ? 'ผ่านแล้ว' : 'รอดำเนินการ';
+                
+                const formattedDate = apptDate.toLocaleDateString('th-TH', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">${appt.patientName}</h6>
+                                <p class="mb-1">
+                                    <i class="bi bi-calendar-event me-1"></i> ${formattedDate}<br>
+                                    <i class="bi bi-tag me-1"></i> ${appt.type}
+                                </p>
+                                ${appt.note ? `<small class="text-muted"><i class="bi bi-chat-text me-1"></i> ${appt.note}</small>` : ''}
+                            </div>
+                            <div>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                                <button class="btn btn-sm btn-outline-danger mt-2" onclick="deleteAppointment(${appt.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+            
+            // แสดง modal
+            const modal = new bootstrap.Modal(document.getElementById('appointmentsModal'));
+            modal.show();
+        }
+
+        // ลบการนัดหมาย
+        function deleteAppointment(id) {
+            if (!confirm('คุณต้องการลบการนัดหมายนี้ใช่หรือไม่?')) return;
+            
+            let appointments = JSON.parse(localStorage.getItem(APPOINTMENT_KEY)) || [];
+            appointments = appointments.filter(a => a.id !== id);
+            localStorage.setItem(APPOINTMENT_KEY, JSON.stringify(appointments));
+            
+            loadAppointments();
+        }
+
+        // ค้นหาประวัติ
+        function searchRecords() {
+            const query = document.getElementById('searchBox').value.toLowerCase().trim();
+            const container = document.getElementById('searchResults');
+            
+            if (!query) {
+                container.innerHTML = '<div class="text-muted text-center p-2">พิมพ์คำค้นหาเพื่อค้นหาประวัติ</div>';
+                return;
+            }
+            
+            let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const results = records.filter(record => {
+                return (
+                    (record.name && record.name.toLowerCase().includes(query)) ||
+                    (record.symptom && record.symptom.toLowerCase().includes(query)) ||
+                    (record.tcmDiag && record.tcmDiag.toLowerCase().includes(query)) ||
+                    (record.westDiag && record.westDiag.toLowerCase().includes(query)) ||
+                    (record.plan && record.plan.toLowerCase().includes(query))
+                );
+            });
+            
+            if (results.length === 0) {
+                container.innerHTML = '<div class="text-muted text-center p-3">ไม่พบผลลัพธ์ที่ตรงกัน</div>';
+                return;
+            }
+            
+            let html = '<div class="list-group">';
+            results.slice(0, 5).forEach(record => {
+                html += `
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${record.name}</h6>
+                            <small class="text-muted">${record.savedAt}</small>
+                        </div>
+                        <p class="mb-1">
+                            <small>อายุ ${record.age} ปี, ${record.gender}</small><br>
+                            <small>บริการ: ${record.services ? record.services.map(s => s.service).join(', ') : 'ไม่มีข้อมูล'}</small><br>
+                            <small>รวม: ${record.totalCost ? record.totalCost.toLocaleString() : 0} บาท</small>
+                        </p>
+                        <div class="d-flex justify-content-end gap-1 mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadRecord(${record.id})">
+                                <i class="bi bi-eye"></i> โหลด
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="exportRecordPDF(${record.id})">
+                                <i class="bi bi-file-pdf"></i> PDF
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="exportReceiptFromRecord(${record.id})">
+                                <i class="bi bi-receipt"></i> เสร็จ
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        // เปิดโมดัลแสดงประวัติทั้งหมด
+        function openSavedList() {
+            renderSavedList();
+            const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+            modal.show();
+        }
+
+        // ล้างฟอร์มทั้งหมด
+        function clearForm() {
+            if (!confirm('คุณต้องการล้างข้อมูลทั้งหมดในฟอร์มใช่หรือไม่?')) return;
+            
+            // ล้าง input fields
+            document.getElementById('pname').value = '';
+            document.getElementById('age').value = '';
+            document.getElementById('gender').value = 'ชาย';
+            document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('visitTime').value = '09:00';
+            document.getElementById('symptom').value = '';
+            document.getElementById('history').value = '';
+            document.getElementById('tcmDiag').value = '';
+            document.getElementById('westDiag').value = '';
+            document.getElementById('plan').value = '';
+            document.getElementById('herbRecommendation').value = '';
+            document.getElementById('treatmentDays').value = 7;
+            document.getElementById('additionalNote').value = '';
+            document.getElementById('appointNote').value = '';
+            document.getElementById('otherService').value = '';
+            document.getElementById('otherPrice').value = 0;
+            
+            // รีเซ็ต chip selection
+            document.querySelectorAll('#tongueChips .chip.active').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            
+            // รีเซ็ต service selection
+            document.querySelectorAll('.service-chip.active').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            
+            // รีเซ็ตชีพจร
+            document.getElementById('p_normal').checked = true;
+            
+            // ตั้งค่าวันที่นัดหมาย (7 วันข้างหน้า)
+            const nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            document.getElementById('appointDate').value = nextWeek.toISOString().slice(0, 16);
+            
+            // รีเซ็ตตัวแปร
+            selectedServices = [];
+            
+            // อัพเดทใบเสร็จ
+            updateReceipt();
+            
+            alert('ล้างฟอร์มสำเร็จ');
+        }
+    </script>
+</body>
+</html>
